@@ -80,9 +80,6 @@ export default function Home() {
       document.addEventListener("mouseup", () => {
         document.removeEventListener("mousemove", onMouseMove);
       });
-      document.addEventListener("click", () => {
-        console.log(camera.position);
-      });
     });
   }, []);
 
