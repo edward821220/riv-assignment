@@ -1,9 +1,10 @@
 import Head from "next/head";
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect } from "react";
 import styled from "styled-components";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
 const Container = styled.div`
   cursor: grab;
@@ -15,13 +16,13 @@ export default function Home() {
   useEffect(() => {
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(
-      25, // 相機的垂直視野
+      24, // 相機的垂直視野
       1440 / window.innerHeight, // 相機的外觀比例
-      0.1, // 接近的相機視體平面距離值
+      5, // 接近的相機視體平面距離值
       1000 //遠的相機視體平面距離值
     );
     camera.position.x = 0;
-    camera.position.y = 0;
+    camera.position.y = 20;
     camera.position.z = 50;
 
     const renderer = new THREE.WebGLRenderer();
@@ -33,17 +34,33 @@ export default function Home() {
 
     containerRef.current?.appendChild(renderer.domElement);
 
+    // Add the OrbitControls
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.minPolarAngle = Math.PI / 8;
+    controls.maxPolarAngle = Math.PI / 2.5;
+
     // Add a light source
-    const light = new THREE.PointLight(0xffffff);
-    light.position.set(50, 50, 50);
+    const light = new THREE.AmbientLight(0x404040, 3);
     scene.add(light);
 
     // Load the .glb file using the GLTFLoader
     const loader = new GLTFLoader();
     loader.setDRACOLoader(dracoLoader);
     loader.load("island.glb", (gltf) => {
-      scene.add(gltf.scene);
-      renderer.render(scene, camera);
+      const island = gltf.scene;
+      scene.add(island);
+      controls.target.set(
+        island.position.x,
+        island.position.y,
+        island.position.z
+      );
+      const loader2 = new GLTFLoader();
+      loader2.setDRACOLoader(dracoLoader);
+      loader2.load("cyclist.glb", (gltf2) => {
+        gltf2.scene.position.set(0, 0, 11.8);
+        scene.add(gltf2.scene);
+        renderer.render(scene, camera);
+      });
     });
 
     containerRef.current?.addEventListener("mousedown", (event) => {
@@ -56,11 +73,15 @@ export default function Home() {
         camera.position.y -= deltaY * 0.01;
         lastX = e.clientX;
         lastY = e.clientY;
+
         renderer.render(scene, camera);
       };
       document.addEventListener("mousemove", onMouseMove);
       document.addEventListener("mouseup", () => {
         document.removeEventListener("mousemove", onMouseMove);
+      });
+      document.addEventListener("click", () => {
+        console.log(camera.position);
       });
     });
   }, []);
