@@ -57,8 +57,11 @@ export default function Home() {
       const loader2 = new GLTFLoader();
       loader2.setDRACOLoader(dracoLoader);
       loader2.load("cyclist.glb", (gltf2) => {
-        gltf2.scene.position.set(0, 0, 11.8);
-        scene.add(gltf2.scene);
+        const cyclist = gltf2.scene;
+        scene.add(camera);
+        camera.add(cyclist);
+        cyclist.position.set(-10.5, 0, -50);
+        cyclist.rotation.set(0, -0.5, 0);
         renderer.render(scene, camera);
       });
     });
@@ -73,7 +76,6 @@ export default function Home() {
         camera.position.y -= deltaY * 0.01;
         lastX = e.clientX;
         lastY = e.clientY;
-
         renderer.render(scene, camera);
       };
       document.addEventListener("mousemove", onMouseMove);
