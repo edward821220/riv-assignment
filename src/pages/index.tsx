@@ -1,8 +1,13 @@
 import Head from "next/head";
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
+import styled from "styled-components";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
+
+const Container = styled.div`
+  cursor: grab;
+`;
 
 export default function Home() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -26,8 +31,7 @@ export default function Home() {
     dracoLoader.setDecoderPath("draco/");
     dracoLoader.setDecoderConfig({ type: "js" });
 
-    if (!containerRef.current) return;
-    containerRef.current.appendChild(renderer.domElement);
+    containerRef.current?.appendChild(renderer.domElement);
 
     // Add a light source
     const light = new THREE.PointLight(0xffffff);
@@ -37,18 +41,28 @@ export default function Home() {
     // Load the .glb file using the GLTFLoader
     const loader = new GLTFLoader();
     loader.setDRACOLoader(dracoLoader);
-    loader.load(
-      "island.glb",
-      (gltf) => {
-        console.log(gltf.scene);
-        scene.add(gltf.scene);
+    loader.load("island.glb", (gltf) => {
+      scene.add(gltf.scene);
+      renderer.render(scene, camera);
+    });
+
+    containerRef.current?.addEventListener("mousedown", (event) => {
+      let lastX = event.clientX;
+      let lastY = event.clientY;
+      const onMouseMove = (e: MouseEvent) => {
+        const deltaX = e.clientX - lastX;
+        const deltaY = e.clientY - lastY;
+        camera.position.x += deltaX * 0.01;
+        camera.position.y -= deltaY * 0.01;
+        lastX = e.clientX;
+        lastY = e.clientY;
         renderer.render(scene, camera);
-      },
-      undefined,
-      function (error) {
-        console.error(error);
-      }
-    );
+      };
+      document.addEventListener("mousemove", onMouseMove);
+      document.addEventListener("mouseup", () => {
+        document.removeEventListener("mousemove", onMouseMove);
+      });
+    });
   }, []);
 
   return (
@@ -60,7 +74,7 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <main>
-        <div ref={containerRef} />
+        <Container ref={containerRef} />
       </main>
     </>
   );
