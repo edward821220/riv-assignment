@@ -1,17 +1,44 @@
 import Head from "next/head";
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import styled from "styled-components";
+import Image from "next/image";
+import { useRouter } from "next/router";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import Bear from "../../public/bear.png";
 
 const Container = styled.div`
   cursor: grab;
 `;
-
+const Modal = styled.div`
+  position: fixed;
+  bottom: 72%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 200px;
+  height: 100px;
+`;
+const Content = styled.div`
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  margin-bottom: 10px;
+  font-weight: bold;
+`;
+const Text = styled.div``;
+const Title = styled.h4``;
+const Description = styled.p``;
+const Button = styled.button`
+  display: block;
+  width: 100%;
+  cursor: pointer;
+`;
 export default function Home() {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [show, setShow] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     const scene = new THREE.Scene();
@@ -34,16 +61,13 @@ export default function Home() {
 
     containerRef.current?.appendChild(renderer.domElement);
 
-    // Add the OrbitControls
     const controls = new OrbitControls(camera, renderer.domElement);
-    controls.minPolarAngle = Math.PI / 8;
-    controls.maxPolarAngle = Math.PI / 2.5;
+    controls.maxPolarAngle = 1.26;
+    controls.minPolarAngle = 1;
 
-    // Add a light source
     const light = new THREE.AmbientLight(0x404040, 3);
     scene.add(light);
 
-    // Load the .glb file using the GLTFLoader
     const loader = new GLTFLoader();
     loader.setDRACOLoader(dracoLoader);
     loader.load("island.glb", (gltf) => {
@@ -66,23 +90,26 @@ export default function Home() {
       });
     });
 
-    containerRef.current?.addEventListener("mousedown", (event) => {
-      let lastX = event.clientX;
-      let lastY = event.clientY;
-      const onMouseMove = (e: MouseEvent) => {
-        const deltaX = e.clientX - lastX;
-        const deltaY = e.clientY - lastY;
-        camera.position.x += deltaX * 0.01;
-        camera.position.y -= deltaY * 0.01;
-        lastX = e.clientX;
-        lastY = e.clientY;
-        renderer.render(scene, camera);
-      };
-      document.addEventListener("mousemove", onMouseMove);
-      document.addEventListener("mouseup", () => {
-        document.removeEventListener("mousemove", onMouseMove);
-      });
-    });
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+    const handleRotate = () => {
+      const azimuthalAngle = controls.getAzimuthalAngle();
+      console.log(azimuthalAngle);
+      if (azimuthalAngle > 0.24) {
+        setShow(true);
+      }
+      if (azimuthalAngle > 0.8 || azimuthalAngle < 0.24) {
+        setShow(false);
+      }
+    };
+    controls.addEventListener("change", handleRotate);
+    return () => {
+      controls.removeEventListener("change", handleRotate);
+    };
   }, []);
 
   return (
@@ -95,6 +122,26 @@ export default function Home() {
       </Head>
       <main>
         <Container ref={containerRef} />
+        {show && (
+          <Modal>
+            <Content>
+              <Image src={Bear} alt="bear" width={50} />
+              <Text>
+                <Title>阿峰的房子</Title>
+                <Description>I like bear!</Description>
+              </Text>
+            </Content>
+            <Button
+              onClick={() => {
+                router.push(
+                  "https://drive.google.com/file/d/1-cNlXR3XAuJwJhoTe_nKTtwQmV0xtyrG/view?usp=share_link"
+                );
+              }}
+            >
+              Click!
+            </Button>
+          </Modal>
+        )}
       </main>
     </>
   );
