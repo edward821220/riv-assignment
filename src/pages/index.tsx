@@ -1,6 +1,56 @@
 import Head from "next/head";
+import { useRef, useEffect } from "react";
+import * as THREE from "three";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
+import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
 
 export default function Home() {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(
+      25, // 相機的垂直視野
+      1440 / window.innerHeight, // 相機的外觀比例
+      0.1, // 接近的相機視體平面距離值
+      1000 //遠的相機視體平面距離值
+    );
+    camera.position.x = 0;
+    camera.position.y = 0;
+    camera.position.z = 50;
+
+    const renderer = new THREE.WebGLRenderer();
+    renderer.setSize(1440, window.innerHeight);
+
+    const dracoLoader = new DRACOLoader();
+    dracoLoader.setDecoderPath("draco/");
+    dracoLoader.setDecoderConfig({ type: "js" });
+
+    if (!containerRef.current) return;
+    containerRef.current.appendChild(renderer.domElement);
+
+    // Add a light source
+    const light = new THREE.PointLight(0xffffff);
+    light.position.set(50, 50, 50);
+    scene.add(light);
+
+    // Load the .glb file using the GLTFLoader
+    const loader = new GLTFLoader();
+    loader.setDRACOLoader(dracoLoader);
+    loader.load(
+      "island.glb",
+      (gltf) => {
+        console.log(gltf.scene);
+        scene.add(gltf.scene);
+        renderer.render(scene, camera);
+      },
+      undefined,
+      function (error) {
+        console.error(error);
+      }
+    );
+  }, []);
+
   return (
     <>
       <Head>
@@ -9,7 +59,9 @@ export default function Home() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <main></main>
+      <main>
+        <div ref={containerRef} />
+      </main>
     </>
   );
 }
